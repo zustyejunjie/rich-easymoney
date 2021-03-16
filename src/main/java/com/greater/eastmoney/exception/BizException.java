@@ -4,6 +4,8 @@ import com.greater.eastmoney.common.ResultCodeEnum;
 import org.apache.commons.lang3.StringUtils;
 
 /**
+ *
+ * 一般上 配合ControllerAdvice 全局异常控制器一起使用
  * @Description: 自定义业务异常
  */
 public class BizException extends RuntimeException {
