@@ -2,18 +2,21 @@ package com.greater.eastmoney.controller;
 
 import com.google.common.collect.Maps;
 import com.greater.eastmoney.util.excel.MSExcelUtil;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
 import org.assertj.core.util.Lists;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 
+import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.FileOutputStream;
 import java.io.OutputStream;
 import java.net.URLEncoder;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -26,7 +29,7 @@ import java.util.zip.ZipOutputStream;
  * @Date: 2021/3/16 18:33
  * @Description:
  **/
-
+@Slf4j
 @Controller
 @RequestMapping("/download")
 public class DownloadController {
@@ -34,7 +37,7 @@ public class DownloadController {
 
     @RequestMapping(value = "/excel", method = RequestMethod.GET)
     public void excel( HttpServletResponse response) throws Exception{
-        String outFileName = "test.xls";
+        String outFileName = "test1.xls";
         String sheetName = "testSheet";
 
         // 创建excel文件 并且初始化一个sheet
@@ -58,70 +61,94 @@ public class DownloadController {
      * @throws Exception
      */
     @RequestMapping(value = "/zip", method = RequestMethod.GET)
-    public void excelZip( HttpServletResponse response) throws Exception{
-        ZipOutputStream zipOutputStream = null;
-
+    public void excelZip( HttpServletRequest request,HttpServletResponse response) throws Exception{
+        byte[] buf = new byte[2048];
+        String downloadZipFileName = "测试zip名称"+ LocalDateTime.now().toString() +".zip";
         try{
-            // 写入zip
-            String zipName = "压缩包名称.zip";
-            // 设置属性
-            response.setContentType("application/x-msdownload");
-            response.setHeader("Content-disposition",
-                    "attachment;filename=" + URLEncoder.encode(zipName, "UTF-8"));
+            // 定义过滤流
+            ZipOutputStream outputStream = new ZipOutputStream(response.getOutputStream());
 
-            zipOutputStream = new ZipOutputStream(response.getOutputStream());
-
-            /** 第一个excel */
-            String outFileName1 = "test1.xls";
-            String sheetName1 = "testSheet1";
-            // 创建excel文件 并且初始化一个sheet
-            HSSFWorkbook hssfWorkbook1 = MSExcelUtil.createExcel(sheetName1);
-            // 写入数据
-            MSExcelUtil.fillData(hssfWorkbook1, sheetName1, datalist(), metaList(), 0);
-
-            /** 第二个excel */
-            String outFileName2 = "test2.xls";
-            String sheetName2 = "testSheet2";
-            // 创建excel文件 并且初始化一个sheet
-            HSSFWorkbook hssfWorkbook2 = MSExcelUtil.createExcel(sheetName2);
-            // 写入数据
-            MSExcelUtil.fillData(hssfWorkbook2, sheetName2, datalist(), metaList(), 0);
-
-            // 把两个excel写入到zip --第一个
-            zipOutputStream.putNextEntry(new ZipEntry(outFileName1));
-            ByteArrayOutputStream tempOut1 = new ByteArrayOutputStream();
-            hssfWorkbook1.write(tempOut1);
-            ByteArrayInputStream tempIn1 = new ByteArrayInputStream(tempOut1.toByteArray());
-            int len;
-            while((len = tempIn1.read()) != -1) {
-                zipOutputStream.write(len);
+            if (request.getHeader("User-Agent").toLowerCase().indexOf("firefox") > 0) {
+                downloadZipFileName = new String(downloadZipFileName.getBytes("GB2312"),"ISO-8859-1");
+            } else {
+                downloadZipFileName = java.net.URLEncoder.encode(downloadZipFileName, "UTF-8");
+                downloadZipFileName = new String(downloadZipFileName.getBytes("UTF-8"), "GBK");
             }
-            zipOutputStream.flush();
+            response.reset();
+            response.setCharacterEncoding("UTF-8");
+            response.setContentType("application/zip");
+            response.setHeader("Content-Disposition", "attachment;filename="+downloadZipFileName);
 
-            tempIn1.close();
-            tempOut1.close();
+            // 写入过滤流
+            ByteArrayInputStream byteArrayInputStream = excelinputstream();
+            String excelName = "123.xls";
+            outputStream.putNextEntry(new ZipEntry(excelName));
+            int len ;
+            while ((len=byteArrayInputStream.read(buf))!=-1){
+                outputStream.write(buf,0,len);
+                outputStream.flush();
+            }
+            outputStream.closeEntry();
+
+            byteArrayInputStream.close();
+
+
+            // 写入第二个excel
+            ByteArrayInputStream inputStream2 = excelinputstream2();
+            String excelName2 = "345.xls";
+            outputStream.putNextEntry(new ZipEntry(excelName2));
+            int len2 ;
+            while ((len2=inputStream2.read(buf))!=-1){
+                outputStream.write(buf,0,len2);
+                outputStream.flush();
+            }
+            outputStream.closeEntry();
+            inputStream2.close();
+
+
+            outputStream.close();
+            log.info("导出成功");
         }catch (Exception e){
             e.printStackTrace();
-        }finally {
-            if(zipOutputStream!=null){
-                zipOutputStream.close();
-            }
-
+        } finally{
+            log.info("处理结束");
         }
-
-        // 把两个excel写入到zip --第二个
-//        zipOutputStream.putNextEntry(new ZipEntry(outFileName2));
-//        ByteArrayOutputStream tempOut2 = new ByteArrayOutputStream();
-//        hssfWorkbook2.write(tempOut2);
-//        ByteArrayInputStream tempIn2 = new ByteArrayInputStream(tempOut2.toByteArray());
-//        int len2;
-//        while((len2 = tempIn2.read()) != -1) {
-//            zipOutputStream.write(len2);
-//            zipOutputStream.flush();
-//        }
-
     }
 
+    /**
+     * 获取excel的输入流
+     * @return
+     * @throws Exception
+     */
+    private ByteArrayInputStream excelinputstream() throws Exception{
+        String outFileName1 = "test1.xls";
+        String sheetName1 = "testSheet1";
+        // 创建excel文件 并且初始化一个sheet
+        HSSFWorkbook hssfWorkbook1 = MSExcelUtil.createExcel(sheetName1);
+        // 写入数据
+        MSExcelUtil.fillData(hssfWorkbook1, sheetName1, datalist(), metaList(), 0);
+        ByteArrayOutputStream tempOut = new ByteArrayOutputStream();
+        hssfWorkbook1.write(tempOut);
+        return new ByteArrayInputStream(tempOut.toByteArray());
+    }
+
+
+    /**
+     * 获取excel的输入流
+     * @return
+     * @throws Exception
+     */
+    private ByteArrayInputStream excelinputstream2() throws Exception{
+        String outFileName1 = "test2.xls";
+        String sheetName1 = "testSheet2";
+        // 创建excel文件 并且初始化一个sheet
+        HSSFWorkbook hssfWorkbook1 = MSExcelUtil.createExcel(sheetName1);
+        // 写入数据
+        MSExcelUtil.fillData(hssfWorkbook1, sheetName1, datalist(), metaList(), 0);
+        ByteArrayOutputStream tempOut = new ByteArrayOutputStream();
+        hssfWorkbook1.write(tempOut);
+        return new ByteArrayInputStream(tempOut.toByteArray());
+    }
 
 
     private List<Map<String, String>> datalist(){
