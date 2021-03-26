@@ -1,4 +1,4 @@
-package com.greater.eastmoney.controller;
+package com.greater.eastmoney.controller.download;
 
 import com.google.common.collect.Maps;
 import com.greater.eastmoney.util.excel.MSExcelUtil;
@@ -13,8 +13,6 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.io.FileOutputStream;
-import java.io.OutputStream;
 import java.net.URLEncoder;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
