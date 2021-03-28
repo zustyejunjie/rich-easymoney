@@ -1,7 +1,6 @@
-package com.greater.eastmoney.service;
+package com.greater.eastmoney.service.favor;
 
-import com.greater.eastmoney.common.UrlContant;
-import com.greater.eastmoney.httpclient.HttpClientUtil;
+import com.greater.eastmoney.aop.Dubbo;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
@@ -20,8 +19,10 @@ public class FavorQueryService {
      * 查询自选列表
      * @return
      */
-    public String favorNameList(){
-        String result = HttpClientUtil.get(UrlContant.favorList);
+    @Dubbo("查询自选列表")
+    public String favorNameList(favorRequest request){
+//        String result = HttpClientUtil.get(UrlContant.favorList);
+        String result = "11111";
         return result;
     }
 

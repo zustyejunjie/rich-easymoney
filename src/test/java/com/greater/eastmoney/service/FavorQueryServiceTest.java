@@ -1,6 +1,8 @@
 package com.greater.eastmoney.service;
 
 import com.greater.eastmoney.TestSupport;
+import com.greater.eastmoney.service.favor.FavorQueryService;
+import com.greater.eastmoney.service.favor.favorRequest;
 import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -18,9 +20,12 @@ public class FavorQueryServiceTest extends TestSupport {
 
     @Test
     public void favor(){
-       String result = favorQueryService.favorNameList();
+        favorRequest request = new favorRequest();
+        request.setUserId("1");
+        request.setUserName("2");
+        String result = favorQueryService.favorNameList(request);
 
-       System.out.println(result);
+        System.out.println(result);
     }
 
 

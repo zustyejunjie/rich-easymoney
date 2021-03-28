@@ -1,8 +1,3 @@
-/**  
- * @Corporation 连连银通电子支付有限公司
- * @ClassName com.lianpay.repaymentapi.web.aspect.DubboAspect.java 
- * @Version V1.0   
- */
 package com.greater.eastmoney.aop;
 
 import com.alibaba.fastjson.JSON;
@@ -56,6 +51,8 @@ public class DubboAspect {
 			// 打印请求日志
 			log.info("[{}]请求报文:{}", dubbo.value(), JSON.toJSONString(args[0]));
 
+			// 统一做参数校验，而不是在每个接口中处理
+			// notEmpty 使用hebernate中的注解。
 			// 校验参数合法性
 			ValidateBeanUtils.validateAnnotation(args[0]);
 
